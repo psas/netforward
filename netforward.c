@@ -44,6 +44,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -112,41 +113,90 @@ dump_addr (int fd, char *name, int do_peer)
 	    peer_name, ntohs (peer.sin_port));
 }
 
-int
-main (int argc, char **argv)
+typedef struct _binding {
+    struct _binding	*next;
+    struct in_addr	addr;
+    int			fd;
+} binding_t;
+
+binding_t *make_binding (char *arg)
+{
+    binding_t	*b;
+    int		soopts = 1;
+    
+    b = malloc (sizeof (binding_t));
+    if (!inet_aton (arg, &b->addr))
+	losing (arg, "binding allocation");
+
+    b->fd = socket (AF_INET, SOCK_DGRAM, 0);
+    if (b->fd < 0)
+	losing (arg, "socket creation");
+    
+    if (setsockopt (b->fd, SOL_SOCKET, SO_BROADCAST, 
+		    (char *)&soopts, sizeof (soopts)) < 0)
+	losing (arg, "setsockopt");
+    
+    return b;
+}
+
+void set_source (binding_t *b, int port)
+{
+    struct sockaddr_in	addr;
+
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons (port);
+    addr.sin_addr = b->addr;
+    if (bind (b->fd, (struct sockaddr *) &addr, sizeof (addr)) < 0)
+	losing ("source", "bind");
+}
+
+void set_dest (binding_t *b, int port)
+{
+    struct sockaddr_in	addr;
+
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons (port);
+    addr.sin_addr = b->addr;
+    if (connect (b->fd, (struct sockaddr *) &addr, sizeof (addr)) < 0)
+	losing ("dest", "connect");
+}
+
+int main (int argc, char **argv)
 {
     int			c;
     unsigned short	port = 0;
-    struct in_addr	source_ip;
-    struct in_addr	dest_ip;
-    int			source_fd;
-    int			dest_fd;
-    struct sockaddr_in	source_addr;
-    struct sockaddr_in	dest_addr;
+    binding_t		*source = 0;
+    binding_t		*dest = 0;
+    
+    binding_t		*s, *d;
+    
     char		packet[8192];
     int			n;
+    int			i;
+    int			nsource;
     int			soopts;
     int			verbose = 0;
     int			source_set = 0;
     int			dest_set = 0;
+    struct pollfd	*fds;
     
     while ((c = getopt (argc, argv, "vp:s:d:")) >= 0)
     {
 	switch (c) {
 	case 'p':
-	    port = htons (atoi (optarg));
+	    port = atoi (optarg);
 	    if (port <= 0)
 		usage (argv[0]);
 	    break;
 	case 's':
-	    if (!inet_aton (optarg, &source_ip))
-		usage (argv[0]);
-	    source_set = 1;
+	    s = make_binding (optarg);
+	    s->next = source;
+	    source = s;
 	    break;
 	case 'd':
-	    if (!inet_aton (optarg, &dest_ip))
-		usage (argv[0]);
-	    dest_set = 1;
+	    d = make_binding (optarg);
+	    d->next = dest;
+	    dest = d;
 	    break;
 	case 'v':
 	    verbose++;
@@ -156,63 +206,68 @@ main (int argc, char **argv)
 	    break;
 	}
     }
-    if (!port || !source_set || !dest_set)
+    if (!port || !source || !dest)
 	usage (argv[0]);
 
-    /* Create source socket */
-    source_addr.sin_family = AF_INET;
-    source_addr.sin_port = port;
-    source_addr.sin_addr = source_ip;
-
-    source_fd = socket (AF_INET, SOCK_DGRAM, 0);
-    if (source_fd < 0)
-	losing (argv[0], "source socket creation");
-	
-    /* make sure broadcast addresses are legal */
-    soopts = 1;
-    if (setsockopt (source_fd, SOL_SOCKET, SO_BROADCAST, 
-		    (char *)&soopts, sizeof (soopts)) < 0)
-	losing (argv[0], "source socket setsockopt");
-
-    if (bind (source_fd, (struct sockaddr *) &source_addr, sizeof (source_addr)) < 0)
-	losing (argv[0], "source binding");
-    
-    /* Create dest socket */
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = port;
-    dest_addr.sin_addr = dest_ip;
-
-    dest_fd = socket (AF_INET, SOCK_DGRAM, 0);
-    if (dest_fd < 0)
-	losing (argv[0], "dest socket creation");
-    
-    /* make sure broadcast addresses are legal */
-    soopts = 1;
-    if (setsockopt (dest_fd, SOL_SOCKET, SO_BROADCAST, 
-		    (char *)&soopts, sizeof (soopts)) < 0)
-	losing (argv[0], "dest socket setsockopt");
-
-    if (connect (dest_fd, (struct sockaddr *) &dest_addr, sizeof (dest_addr)) < 0)
-	losing (argv[0], "dest connect");
-
-    if (verbose)
+    nsource = 0;
+    for (s = source; s; s = s->next)
     {
-	dump_addr (source_fd, "source", 0);
-	dump_addr (dest_fd, "dest", 1);
-	printf ("ready...\n");
+	set_source (s, port);
+	if (verbose)
+	    dump_addr (s->fd, "source", 0);
+	nsource++;
+    }
+    
+    if (nsource > 1)
+    {
+	fds = malloc (nsource * sizeof (struct pollfd));
+	if (!fds)
+	    losing (argv[0], "malloc fds");
+    
+	i = 0;
+	for (s = source; s; s = s->next)
+	{
+	    fds[i].fd = s->fd;
+	    fds[i].events = POLLIN;
+	    fds[i].revents = 0;
+	}
+    }
+    else
+	fds = 0;
+	
+    for (d = dest; d; d = d->next)
+    {
+	set_dest (d, port);
+	if (verbose)
+	    dump_addr (d->fd, "dest", 1);
     }
 
     /* spend a while shipping packets around */
     for (;;) 
     {
-	n = read (source_fd, packet, sizeof (packet));
-	if (n < 0)
-	    losing (argv[0], "read");
+	if (fds)
+	{
+	    i = poll (fds, nsource, -1);
+	    if (i < 0)
+		break;
+	}
 
-	if (verbose)
-	    printf ("%d\n", n );
-
-	if (write (dest_fd, packet, n) < n)
-	    losing (argv[0], "write");
+	i = 0;
+	for (s = source, i = 0; s; s = s->next, i++)
+	{
+	    if (!fds || fds[i].revents & POLLIN)
+	    {
+		n = read (s->fd, packet, sizeof (packet));
+		if (n < 0)
+		    losing (argv[0], "read");
+		if (verbose)
+		    printf ("%d\n", n );
+		for (d = dest; d; d = d->next)
+		{
+		    if (write (d->fd, packet, n) < n)
+			losing (argv[0], "write");
+		}
+	    }
+	}
     }
 }

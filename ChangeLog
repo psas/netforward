@@ -1,3 +1,8 @@
+2004-09-06  Keith Packard  <keithp@keithp.com>
+
+	* netforward.c: (make_binding), (set_source), (set_dest), (main):
+	Permit multiple source and destination addresses
+
 2004-09-05  Keith Packard  <keithp@keithp.com>
 
 	* netforward.c: (losing), (dump_addr), (main):
