@@ -1,3 +1,11 @@
+netforward (0.2-1) unstable; urgency=low
+
+  * Set broadcast option for source socket
+  * Permit INADDR_ANY (0.0.0.0) addresses
+  * Dump computed addresses in verbose mode
+
+ -- Keith Packard <keithp@keithp.com>  Sun,  5 Sep 2004 23:06:43 -0700
+
 netforward (0.1-1) unstable; urgency=low
 
   * Initial Release.

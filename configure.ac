@@ -21,7 +21,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT(netforward, 0.1, keithp@keithp.com)
+AC_INIT(netforward, 0.2, keithp@keithp.com)
 AC_CONFIG_SRCDIR([netforward.c])
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
