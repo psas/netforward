@@ -1,0 +1,55 @@
+.\"
+.\" $Id$
+.\"
+.\" Copyright © 2004 Keith Packard
+.\"
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of version 2 of the GNU General Public
+.\" License as published by the Free Software Foundation
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this library; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.\"
+.\" Author: Keith Packard <keithp@keithp.com>
+.\"
+
+.TH "netforward" "1" "1 Septemper 2004" "" ""
+
+.SH NAME
+netforward \- forward UDP packets between networks
+.SH SYNOPSIS
+
+\fBnetforward\fR [ \fB-v\fR ] [ \fB-p \fIport\fR ] [ \fB-s \fIsource\fR ] [ \fB-d \fIdestfR ]
+.SH DESCRIPTION
+.PP
+Netforward is a simplistic tool that reflects UDP packets from one IP
+interface to another.
+.SH OPTIONS
+.PP
+This program uses only the primitive sysv-style getopt parser, so each
+option is a single letter.
+.TP
+\fB-v\fR
+Verbose mode.  This displays the size (in bytes) of each forwarded packet.
+.TP
+\fB-p \fIport\fR
+Selects the port.  Netfilter uses the same port number for source and
+destination.
+.TP
+\fB-s \fIsource\fR
+Selects the source IP address.  This should match the IP address of one of
+the interfaces on the local machine.
+.TP
+\fB-d \fIdest\fR
+Selects the destination IP address.  This can either be the address of a
+remote machine or the broadcast address of one of the local interfaces.
+.SH AUTHOR
+.PP
+This sad excuse for a network utility was written by Keith Packard
+<keithp@keithp.com>

@@ -1,0 +1,12 @@
+Source: netforward
+Section: net
+Priority: optional
+Maintainer: Keith Packard <keithp@keithp.com>
+Build-Depends: debhelper (>= 4)
+Standards-Version: 3.6.1
+
+Package: netforward
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: simple UDP packet forwarding application
+ Reflects UDP packets from one network to another
