@@ -1,0 +1,7 @@
+2004-09-05  Keith Packard  <keithp@keithp.com>
+
+	* netforward.c: (losing), (dump_addr), (main):
+	Fix 'losing' to display program name instead of segfault
+	display network addresses in verbose mode
+	Allow 0.0.0.0 addresses (INADDR_ANY)
+	set SO_BROADCAST on source socket to receive broadcast packets
