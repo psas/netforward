@@ -1,3 +1,13 @@
+netforward (0.4-1) unstable; urgency=low
+
+  * Permit destination of "-", to send data to stdout.
+  * Ensure that every other printed message goes to stderr.
+  * Document ability to send to stdout.
+  * Document ability to listen to multiple sources and send to multiple
+    destinations.
+
+ -- Josh Triplett <josh.trip@verizon.net>  Thu, 16 Dec 2004 00:12:40 -0800
+
 netforward (0.3-1) unstable; urgency=low
 
   * Permit multiple source and dest options

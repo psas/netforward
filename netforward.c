@@ -27,14 +27,15 @@
  *
  * Usage:
  *
- *	netforward [-v] [-p port] [-s source-ip] [-d dest-ip]
+ *	netforward [-v] [-p port] [-s source-ip] [-d dest-ip|-]
  *
  *  Port is a decimal port number and is used for both receive and transmit.
  *  Source-ip is a dotted-decimal IP address which should match the IP
  *	of one of the interfaces in the local machine.
  *  Dest-ip is a dotted-decimal IP address to which packets will be sent.
  *	This can include broadcast addresses.  If packets sent to this port
- *	end up received at source-ip, a nice packet loop will result.
+ *	end up received at source-ip, a nice packet loop will result.  Using
+ *	"-" will send data to standard output.
  *
  *  -v says to make output more verbose
  */
@@ -58,7 +59,8 @@ extern int optind, opterr, optopt;
 void
 usage (char *program)
 {
-    fprintf (stderr, "usage: %s [-v] [-p port] [-s source-ip] [-d dest-ip]\n",
+    fprintf (stderr,
+             "usage: %s [-t] [-v] [-p port] [-s source-ip] [-d dest-ip|-]\n",
 	     program);
     exit (1);
 }
@@ -89,6 +91,12 @@ dump_addr (int fd, char *name, int do_peer)
     char		self_name[256];
     char		peer_name[256];
 
+    if (fd == 1)
+    {
+        fprintf(stderr, "socket %s: stdout\n", name);
+        return;
+    }
+    
     if (getsockname (fd, (struct sockaddr *) &self, &self_len) < 0)
 	losing (name, "dump_addr self");
     
@@ -107,10 +115,10 @@ dump_addr (int fd, char *name, int do_peer)
 	peer.sin_port = 0;
     }
     
-    printf ("socket %s: self %s:%d peer %s:%d\n",
-	    name,
-	    self_name, ntohs (self.sin_port),
-	    peer_name, ntohs (peer.sin_port));
+    fprintf (stderr, "socket %s: self %s:%d peer %s:%d\n",
+             name,
+             self_name, ntohs (self.sin_port),
+             peer_name, ntohs (peer.sin_port));
 }
 
 typedef struct _binding {
@@ -125,6 +133,13 @@ binding_t *make_binding (char *arg)
     int		soopts = 1;
     
     b = malloc (sizeof (binding_t));
+
+    if (!strcmp(arg, "-"))
+    {
+        b->fd = 1;
+        return b;
+    }
+    
     if (!inet_aton (arg, &b->addr))
 	losing (arg, "binding allocation");
 
@@ -154,6 +169,9 @@ void set_dest (binding_t *b, int port)
 {
     struct sockaddr_in	addr;
 
+    if (b->fd == 1)
+        return;
+    
     addr.sin_family = AF_INET;
     addr.sin_port = htons (port);
     addr.sin_addr = b->addr;
@@ -261,7 +279,7 @@ int main (int argc, char **argv)
 		if (n < 0)
 		    losing (argv[0], "read");
 		if (verbose)
-		    printf ("%d\n", n );
+		    fprintf (stderr, "%d\n", n );
 		for (d = dest; d; d = d->next)
 		{
 		    if (write (d->fd, packet, n) < n)

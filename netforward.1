@@ -25,7 +25,7 @@
 netforward \- forward UDP packets between networks
 .SH SYNOPSIS
 
-\fBnetforward\fR [ \fB-v\fR ] [ \fB-p \fIport\fR ] [ \fB-s \fIsource\fR ] [ \fB-d \fIdestfR ]
+\fBnetforward\fR [ \fB-v\fR ] [ \fB-p \fIport\fR ] [ \fB-s \fIsource\fR ] [ \fB-d \fIdest|-fR ]
 .SH DESCRIPTION
 .PP
 Netforward is a simplistic tool that reflects UDP packets from one IP
@@ -43,12 +43,15 @@ Selects the port.  Netfilter uses the same port number for source and
 destination.
 .TP
 \fB-s \fIsource\fR
-Selects the source IP address.  This should match the IP address of one of
-the interfaces on the local machine.
+Selects a source IP address.  This should match the IP address of one of the
+interfaces on the local machine.  This option can be specified multiple times
+to listen on multiple addresses.
 .TP
-\fB-d \fIdest\fR
-Selects the destination IP address.  This can either be the address of a
-remote machine or the broadcast address of one of the local interfaces.
+\fB-d \fIdest|-\fR
+Selects a destination IP address.  This can either be the address of a remote
+machine or the broadcast address of one of the local interfaces.  "-" sends
+data to standard output.  This option can be specified multiple times to send
+data to multiple destinations.
 .SH AUTHOR
 .PP
 This sad excuse for a network utility was written by Keith Packard

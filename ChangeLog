@@ -1,3 +1,14 @@
+2004-12-15  Josh Triplett  <josh@freedesktop.org>
+
+	* netforward.c:
+	Permit destination of "-", to send data to stdout.
+	Ensure that every other printed message goes to stderr.
+	
+	* netforward.1:
+	Document ability to send to stdout.
+	Document ability to listen to multiple sources and send to
+	multiple destinations
+
 2004-09-06  Keith Packard  <keithp@keithp.com>
 
 	* netforward.c: (make_binding), (set_source), (set_dest), (main):
