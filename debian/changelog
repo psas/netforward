@@ -1,3 +1,9 @@
+netforward (0.3-1) unstable; urgency=low
+
+  * Permit multiple source and dest options
+
+ -- Keith Packard <keithp@keithp.com>  Mon,  6 Sep 2004 14:27:04 -0700
+
 netforward (0.2-1) unstable; urgency=low
 
   * Set broadcast option for source socket
