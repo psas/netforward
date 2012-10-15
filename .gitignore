@@ -12,8 +12,10 @@ depcomp
 install-sh
 missing
 mkinstalldirs
-netforward
 stamp-h1
 build-stamp
 config.guess
 config.sub
+
+*.o
+netforward
